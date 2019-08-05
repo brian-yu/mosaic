@@ -1,3 +1,4 @@
+// Package crawl provides methods for scraping Insecam's camera streams.
 package crawl
 
 import (
@@ -12,8 +13,9 @@ import (
 
 const RawInsecamUrl = "http://www.insecam.org/en/byrating/"
 
-// Scrapes numStreams streams from Insecam popular.
-func Scrape(numStreams int) []*Stream {
+// ScrapePopular retrieves info for numStreams streams from Insecam's
+// popular cameras.
+func ScrapePopular(numStreams int) []*Stream {
 	streams := make([]*Stream, numStreams)
 	numScraped := 0
 	page := 1
@@ -29,18 +31,14 @@ func Scrape(numStreams int) []*Stream {
 func scrapePage(page int, count *int, limit int, streams []*Stream) {
 	// Construct the URL.
 	u, err := url.Parse(RawInsecamUrl)
-	if err != nil {
-		log.Fatal(err)
-	}
+	logIfErr(err)
 	q := u.Query()
 	q.Set("page", strconv.Itoa(page))
 	u.RawQuery = q.Encode()
 
 	// Send a GET request.
 	res, err := http.Get(u.String())
-	if err != nil {
-		log.Fatal(err)
-	}
+	logIfErr(err)
 	defer res.Body.Close()
 	if res.StatusCode != 200 {
 		log.Fatalf("status code error: %d %s", res.StatusCode, res.Status)
@@ -48,9 +46,7 @@ func scrapePage(page int, count *int, limit int, streams []*Stream) {
 
 	// Load the HTML document.
 	doc, err := goquery.NewDocumentFromReader(res.Body)
-	if err != nil {
-		log.Fatal(err)
-	}
+	logIfErr(err)
 
 	// Find the stream items.
 	doc.Find(".thumbnail-item").Each(func(i int, s *goquery.Selection) {
@@ -81,4 +77,10 @@ func extractLocation(title string) string {
 		", ",
 	)
 	return countryState[1] + ", " + countryState[0]
+}
+
+func logIfErr(err error) {
+	if err != nil {
+		log.Fatal(err)
+	}
 }

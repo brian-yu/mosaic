@@ -11,10 +11,11 @@ import (
 func main() {
 
 	numStreamsPtr := flag.Int("limit", 50, "number of streams to scrape")
+	fname := flag.String("o", "streams.csv", "file to write streams to")
 	flag.Parse()
 	numStreams := *numStreamsPtr
 
-	streams := crawl.Scrape(numStreams)
+	streams := crawl.ScrapePopular(numStreams)
 
 	records := make([][]string, numStreams+1)
 	records[0] = crawl.Fields()
@@ -22,7 +23,11 @@ func main() {
 		records[i+1] = streams[i].Slice()
 	}
 
-	f, err := os.Create("streams.csv")
+	writeCsv(*fname, records)
+}
+
+func writeCsv(fname string, records [][]string) {
+	f, err := os.Create(fname)
 	if err != nil {
 		log.Fatal(err)
 	}
